@@ -1,0 +1,26 @@
+{
+    "name": "bran/certmap",
+    "description": "GLPI Plugin for technical certifications and competency management",
+    "type": "glpi-plugin",
+    "license": "GPL-3.0",
+    "autoload": {
+        "psr-4": {
+            "GlpiPlugin\\Certmap\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Brandon Oliveira Simões",
+            "email": "brandon.oliveira.simoes@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require-dev": {
+        "glpi-project/coding-standard": "^0.9.0"
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    }
+}
