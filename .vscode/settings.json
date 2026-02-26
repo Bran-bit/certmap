@@ -1,0 +1,7 @@
+{
+    "phpSniffer.standard": "vendor/glpi-project/coding-standard/GlpiStandard",
+    "phpSniffer.executablesFolder": "vendor/bin/",
+    "[php]": {
+        "editor.formatOnSave": true
+    }
+}

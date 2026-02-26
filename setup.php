@@ -1,11 +1,11 @@
 <?php
-define('CERTMAP_VERSION',  '1.0.0');
+define('CERTMAP_VERSION', '1.0.0');
 
 function plugin_certmap_check_prerequisites() {
-    if(version_compare(GLPI_VERSION, '11.0', 'lt')) {
-        echo "Este plugin requer GLPI >= 11.0";
-        return false;
-    }
+   if (version_compare(GLPI_VERSION, '11.0', 'lt')) {
+       echo "Este plugin requer GLPI >= 11.0";
+       return false;
+   }
     return true;
 }
 
@@ -20,11 +20,11 @@ function plugin_version_certmap() {
         'author' => 'Brandon Oliveira',
         'license' => 'GLPv3',
         'requirements' => [
-            'glpi' => [
+        'glpi' => [
                 'min' => '11.0.0'
-            ]
+                    ]
         ]
-    ];
+        ];
 }
 
 function plugin_certmap_install() {
@@ -32,5 +32,5 @@ function plugin_certmap_install() {
 }
 
 function plugin_certmap_uninstall() {
-    
+
 }
