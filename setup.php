@@ -26,11 +26,3 @@ function plugin_version_certmap() {
         ]
         ];
 }
-
-function plugin_certmap_install() {
-
-}
-
-function plugin_certmap_uninstall() {
-
-}

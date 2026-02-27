@@ -93,8 +93,8 @@ vendor/bin/phpcbf --standard=vendor/glpi-project/coding-standard/GlpiStandard .
 - [x] Levantamento de requisitos
 - [x] Modelagem do banco de dados
 - [x] Configuração do ambiente de desenvolvimento
-- [ ] Estrutura mínima do plugin (setup.php, hook.php)
-- [ ] Migrations das tabelas
+- [x] Estrutura mínima do plugin (setup.php, hook.php)
+- [x] Migrations das tabelas
 - [ ] CRUD de competências e certificações
 - [ ] Registro de certificações por técnico
 - [ ] Sugestão de técnicos em chamados
