@@ -1,0 +1,16 @@
+name: "Continuous Integration"
+
+on:
+  push:
+    branches:
+      - "master"
+  pull_request:
+
+jobs:
+  ci:
+    uses: "glpi-project/plugin-ci-workflows/.github/workflows/continuous-integration.yml@v1"
+    with:
+      plugin-key: "certmap"
+      glpi-version: "10.0.x"
+      php-version: "8.1"
+      db-image: "mariadb:11.4"
