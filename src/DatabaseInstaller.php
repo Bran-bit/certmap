@@ -59,7 +59,8 @@ class DatabaseInstaller
 
    /**
     * Retorna o schema completo do plugin como array associativo.
-    * Chave: nome da tabela. Valor: query CREATE TABLE completa.
+    * Chave: nome da tabela. Valor: query CREATE TABLE parcial — sem o
+    * ENGINE/CHARSET/COLLATION, que é concatenado em createTables().
     *
     * Esta é a única fonte de verdade para a estrutura do banco.
     * Detalhes de domínio de cada tabela em docs/ADR-001-database-installer.md
@@ -75,10 +76,7 @@ class DatabaseInstaller
     * @return array<string, string>
     */
    private static function getSchema(): array {
-      $sign         = DBConnection::getDefaultPrimaryKeySignOption();
-      $charset      = DBConnection::getDefaultCharset();
-      $collation    = DBConnection::getDefaultCollation();
-      $tableOptions = "ENGINE=InnoDB DEFAULT CHARSET={$charset} COLLATE={$collation} ROW_FORMAT=DYNAMIC";
+      $sign = DBConnection::getDefaultPrimaryKeySignOption();
 
       $auditFields  = "
                `date_creation` timestamp NULL DEFAULT NULL,
@@ -100,7 +98,7 @@ class DatabaseInstaller
                PRIMARY KEY (`id`),
                KEY `parent_id` (`parent_id`),
                {$auditIndexes}
-            ) {$tableOptions}",
+            )",
 
          'glpi_plugin_certmap_certifications' => "
             CREATE TABLE `glpi_plugin_certmap_certifications` (
@@ -112,7 +110,7 @@ class DatabaseInstaller
                {$auditFields}
                PRIMARY KEY (`id`),
                {$auditIndexes}
-            ) {$tableOptions}",
+            )",
 
          'glpi_plugin_certmap_certification_competencies' => "
             CREATE TABLE `glpi_plugin_certmap_certification_competencies` (
@@ -124,7 +122,7 @@ class DatabaseInstaller
                KEY `plugin_certmap_certifications_id` (`plugin_certmap_certifications_id`),
                KEY `plugin_certmap_competencies_id` (`plugin_certmap_competencies_id`),
                {$auditIndexes}
-            ) {$tableOptions}",
+            )",
 
          'glpi_plugin_certmap_user_certifications' => "
             CREATE TABLE `glpi_plugin_certmap_user_certifications` (
@@ -142,7 +140,7 @@ class DatabaseInstaller
                KEY `status` (`status`),
                KEY `expires_at` (`expires_at`),
                {$auditIndexes}
-            ) {$tableOptions}",
+            )",
 
          'glpi_plugin_certmap_user_competencies' => "
             CREATE TABLE `glpi_plugin_certmap_user_competencies` (
@@ -158,7 +156,7 @@ class DatabaseInstaller
                KEY `plugin_certmap_competencies_id` (`plugin_certmap_competencies_id`),
                KEY `source` (`source`),
                {$auditIndexes}
-            ) {$tableOptions}",
+            )",
 
          'glpi_plugin_certmap_category_requirements' => "
             CREATE TABLE `glpi_plugin_certmap_category_requirements` (
@@ -171,7 +169,7 @@ class DatabaseInstaller
                KEY `itilcategories_id` (`itilcategories_id`),
                KEY `plugin_certmap_competencies_id` (`plugin_certmap_competencies_id`),
                {$auditIndexes}
-            ) {$tableOptions}",
+            )",
 
          'glpi_plugin_certmap_group_requirements' => "
             CREATE TABLE `glpi_plugin_certmap_group_requirements` (
@@ -184,7 +182,7 @@ class DatabaseInstaller
                KEY `groups_id` (`groups_id`),
                KEY `plugin_certmap_competencies_id` (`plugin_certmap_competencies_id`),
                {$auditIndexes}
-            ) {$tableOptions}",
+            )",
 
          'glpi_plugin_certmap_ticket_progress' => "
             CREATE TABLE `glpi_plugin_certmap_ticket_progress` (
@@ -199,21 +197,26 @@ class DatabaseInstaller
                KEY `plugin_certmap_competencies_id` (`plugin_certmap_competencies_id`),
                KEY `status` (`status`),
                {$auditIndexes}
-            ) {$tableOptions}",
+            )",
       ];
    }
 
    /**
     * Cria todas as tabelas do plugin que ainda não existem no banco.
     * A verificação é feita em PHP antes de executar a query.
+    * $tableOptions é concatenado aqui pois é universal a todas as tabelas.
     */
    private static function createTables(): void {
       /** @var \DBmysql $DB */
       global $DB;
 
+      $charset      = DBConnection::getDefaultCharset();
+      $collation    = DBConnection::getDefaultCollation();
+      $tableOptions = "ENGINE=InnoDB DEFAULT CHARSET={$charset} COLLATE={$collation} ROW_FORMAT=DYNAMIC";
+
       foreach (static::getSchema() as $tableName => $createQuery) {
          if (!$DB->tableExists($tableName)) {
-            $DB->doQuery($createQuery);
+            $DB->doQuery($createQuery . " " . $tableOptions);
          }
       }
    }
