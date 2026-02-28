@@ -6,7 +6,7 @@
 
 O plugin precisa importar certificações de técnicos sem exigir cadastro manual. A Credly é a plataforma mais usada pelas certificadoras (AWS, Cisco, Google, etc.), mas outras plataformas como Accredible e Microsoft Learn também emitem certificações relevantes.
 
-## Decisão: interface BadgeClientInterface
+## Decisão: BadgeClientInterface
 
 Foi criada a interface `BadgeClientInterface` para padronizar o contrato entre o código do plugin e qualquer plataforma de certificação. O código que salva no banco não precisa saber de onde vieram os dados — só precisa receber o contrato cumprido.
 
@@ -117,5 +117,3 @@ A ordem dos includes é obrigatória:
 **Scraping do HTML** — frágil a mudanças de layout.
 
 **Usar email do GLPI** — o email no GLPI pode ser diferente do usado na Credly.
-
-**Cadastro manual** — mantido como fallback para certificações fora de plataformas suportadas.
