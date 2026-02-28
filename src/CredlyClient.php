@@ -25,11 +25,12 @@ namespace GlpiPlugin\Certmap;
 use Toolbox;
 
 /**
- * Responsável por consumir a API pública OBI da Credly.
+ * Implementação do BadgeClientInterface para a plataforma Credly.
+ * Consome a API pública OBI (Open Badges v2) da Credly.
  *
  * Decisões de integração documentadas em docs/ADR-002-credly-integration.md
  */
-class CredlyClient
+class CredlyClient implements BadgeClientInterface
 {
    /** @var \GuzzleHttp\Client */
    private $httpClient;
@@ -46,35 +47,22 @@ class CredlyClient
    }
 
    /**
-    * Ponto de entrada público — dado o link do badge e o email do titular,
-    * valida que o badge pertence ao usuário e retorna os dados consolidados.
+    * Busca e valida as informações de um badge da Credly.
     *
-    * A validação é feita comparando o email informado com o hash SHA256
-    * do recipient na assertion. A Credly hasheia o email para preservar
-    * privacidade — a verificação é feita no sentido inverso: hasheia o
-    * email informado e compara com o hash da assertion.
+    * Extrai o badge_id da URL, valida a titularidade via hash SHA256
+    * do email, e consolida os dados dos dois endpoints OBI necessários.
     *
     * Limitação: a validação depende do email que o usuário informa.
     * Se ele informar o email de outra pessoa, a validação passa.
-    * Não há como verificar a titularidade sem autenticação na Credly.
+    * Não há como verificar titularidade sem autenticação na Credly.
     * Referência: docs/ADR-002-credly-integration.md
     *
-    * @param string $badgeUrl URL pública do badge
-    * @param string $email    Email usado pelo titular na Credly
-    * @return array{
-    *   name: string,
-    *   issuer: string,
-    *   description: string,
-    *   image_url: string,
-    *   tags: string[],
-    *   external_id: string,
-    *   issued_at: string,
-    *   expires_at: string|null
-    * }|null Retorna null se a URL for inválida, o badge não for acessível
-    *        ou o email não corresponder ao titular do badge
+    * @param string $url   URL pública do badge (ex: https://www.credly.com/badges/{id}/public_url)
+    * @param string $email Email usado pelo titular na Credly
+    * @return array|null
     */
-   public function fetchBadge(string $badgeUrl, string $email): ?array {
-      if (!$badgeId = $this->extractBadgeId($badgeUrl)) {
+   public function fetchBadge(string $url, string $email): ?array {
+      if (!$badgeId = $this->extractBadgeId($url)) {
          return null;
       }
       if (!$assertion = $this->fetchAssertion($badgeId)) {
@@ -90,11 +78,11 @@ class CredlyClient
       return [
          'name'        => $badgeClass['name'],
          'issuer'      => $badgeClass['issuer']['name'],
+         'external_id' => $badgeId,
+         'issued_at'   => $assertion['issuedOn'],
          'description' => $badgeClass['description'],
          'image_url'   => $badgeClass['image']['id'],
          'tags'        => $badgeClass['tags'] ?? [],
-         'external_id' => $badgeId,
-         'issued_at'   => $assertion['issuedOn'],
          'expires_at'  => $assertion['expires'] ?? null,
       ];
    }
@@ -104,30 +92,19 @@ class CredlyClient
     *
     * A Credly armazena o email como hash SHA256 com prefixo "sha256$".
     * Hasheamos o email informado e comparamos com o hash da assertion.
-    *
-    * @param array  $assertion Dados da assertion retornados pela API
-    * @param string $email     Email informado pelo usuário
-    * @return bool
+    * hash_equals() é usado por ser resistente a timing attacks.
     */
    private function validateRecipient(array $assertion, string $email): bool {
       $recipientHash = $assertion['recipient']['identity'] ?? '';
-
-      // Remove o prefixo "sha256$" antes de comparar
-      $storedHash = str_replace('sha256$', '', $recipientHash);
-      $emailHash  = hash('sha256', $email);
+      $storedHash    = str_replace('sha256$', '', $recipientHash);
+      $emailHash     = hash('sha256', $email);
 
       return hash_equals($storedHash, $emailHash);
    }
 
    /**
     * Extrai o badge_id de uma URL pública da Credly.
-    *
-    * Aceita os formatos:
-    * - https://www.credly.com/badges/{id}
-    * - https://www.credly.com/badges/{id}/public_url
-    *
-    * @param string $url URL pública do badge
-    * @return string|null O badge_id em formato UUID, ou null se inválida
+    * Aceita com ou sem sufixo /public_url.
     */
    private function extractBadgeId(string $url): ?string {
       $pattern = '/credly\.com\/badges\/([a-f0-9\-]{36})/i';
@@ -157,9 +134,6 @@ class CredlyClient
    /**
     * Executa uma requisição GET e retorna o corpo como array.
     * Trata erros de conexão e respostas inesperadas de forma centralizada.
-    *
-    * @param string $uri URI relativa ou absoluta
-    * @return array|null Retorna null em caso de erro
     */
    private function request(string $uri): ?array {
       try {
